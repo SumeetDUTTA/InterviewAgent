@@ -1,0 +1,4 @@
+.env
+__pycache__/
+.venv/
+terminal_interview_1.py

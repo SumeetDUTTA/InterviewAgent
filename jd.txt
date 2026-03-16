@@ -1,0 +1,21 @@
+Job Title: Backend Developer
+
+Experience Required: 2+ years
+
+Required Skills:
+- Node.js
+- Express
+- MongoDB
+- REST APIs
+- JWT Authentication
+
+Preferred Skills:
+- Redis
+- Docker
+- AWS
+
+Responsibilities:
+- Design scalable backend systems
+- Optimize API performance
+- Write clean and maintainable code
+- Collaborate with frontend team

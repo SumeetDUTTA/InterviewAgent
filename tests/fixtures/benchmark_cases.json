@@ -1,0 +1,26 @@
+[
+  {
+    "id": "industry_basic",
+    "domain": "industry",
+    "round_type": "Technical",
+    "topic": "system design",
+    "question": "How would you design a scalable URL shortener service?",
+    "answer": "I would begin with requirements and throughput, then design APIs, key generation, datastore and caching, then discuss replication and tradeoffs."
+  },
+  {
+    "id": "government_policy",
+    "domain": "government",
+    "round_type": "Case Scenario",
+    "topic": "public grievance redressal",
+    "question": "How would you handle policy implementation when citizens report unequal service delivery?",
+    "answer": "I would gather evidence, verify service-level data, identify bias points, apply transparent corrective process, and communicate public updates."
+  },
+  {
+    "id": "phd_methodology",
+    "domain": "phd",
+    "round_type": "Methodology",
+    "topic": "causal inference",
+    "question": "How would you validate causal claims in your proposed study design?",
+    "answer": "I would define assumptions, choose an identification strategy, run robustness checks, and discuss limitations and alternative explanations."
+  }
+]
