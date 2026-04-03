@@ -47,7 +47,10 @@ DOMAIN_PROFILES: Dict[str, dict] = {
         "round_templates": [
             {"type": "Policy Knowledge", "focus_areas": ["regulations", "governance"]},
             {"type": "Case Scenario", "focus_areas": ["ethics", "public impact"]},
-            {"type": "Role Fit", "focus_areas": ["service mindset", "stakeholder handling"]},
+            {
+                "type": "Role Fit",
+                "focus_areas": ["service mindset", "stakeholder handling"],
+            },
         ],
     },
     DOMAIN_PHD: {
@@ -59,7 +62,10 @@ DOMAIN_PROFILES: Dict[str, dict] = {
             "confidence": "Research Confidence",
         },
         "round_templates": [
-            {"type": "Research Background", "focus_areas": ["publications", "prior work"]},
+            {
+                "type": "Research Background",
+                "focus_areas": ["publications", "prior work"],
+            },
             {"type": "Methodology", "focus_areas": ["methods", "validation"]},
             {"type": "Research Proposal", "focus_areas": ["novelty", "feasibility"]},
         ],
@@ -90,15 +96,38 @@ def infer_domain_from_text(text: str) -> str:
         DOMAIN_PHD: 0,
     }
 
-    for keyword in ["government", "public sector", "civil service", "regulation", "policy", "administration"]:
+    for keyword in [
+        "government",
+        "public sector",
+        "civil service",
+        "regulation",
+        "policy",
+        "administration",
+    ]:
         if keyword in t:
             scores[DOMAIN_GOVERNMENT] += 1
 
-    for keyword in ["phd", "doctoral", "research proposal", "supervisor", "publication", "thesis", "methodology"]:
+    for keyword in [
+        "phd",
+        "doctoral",
+        "research proposal",
+        "supervisor",
+        "publication",
+        "thesis",
+        "methodology",
+    ]:
         if keyword in t:
             scores[DOMAIN_PHD] += 1
 
-    for keyword in ["product", "engineering", "software", "startup", "stakeholder", "delivery", "business"]:
+    for keyword in [
+        "product",
+        "engineering",
+        "software",
+        "startup",
+        "stakeholder",
+        "delivery",
+        "business",
+    ]:
         if keyword in t:
             scores[DOMAIN_INDUSTRY] += 1
 

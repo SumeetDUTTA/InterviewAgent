@@ -76,8 +76,12 @@ def _validate_gap_payload(payload: dict) -> dict:
         "strong_skills": _coerce_skill_list(payload, "strong_skills"),
         "partial_match_skills": _coerce_skill_list(payload, "partial_match_skills"),
         "skill_gaps": _coerce_skill_list(payload, "skill_gaps"),
-        "resume_experience_years": float(payload.get("resume_experience_years", 0) or 0),
-        "experience_required": str(payload.get("experience_required", "Not specified") or "Not specified"),
+        "resume_experience_years": float(
+            payload.get("resume_experience_years", 0) or 0
+        ),
+        "experience_required": str(
+            payload.get("experience_required", "Not specified") or "Not specified"
+        ),
         "readiness_score": max(0, min(100, readiness)),
     }
 
@@ -168,7 +172,9 @@ def _refine_gap_with_llm(
 
     baseline_score = int(baseline.get("readiness_score", 0))
     llm_score = int(llm_result.get("readiness_score", baseline_score))
-    blended_score = max(0, min(100, int(round((0.6 * baseline_score) + (0.4 * llm_score)))))
+    blended_score = max(
+        0, min(100, int(round((0.6 * baseline_score) + (0.4 * llm_score))))
+    )
 
     return {
         "strong_skills": sorted(list(valid_strong)),
@@ -180,8 +186,12 @@ def _refine_gap_with_llm(
     }
 
 
-def analyze_gap(resume_data, jd_data, domain: str | None = None, use_llm_refinement: bool = True):
-    resolved_domain = normalize_domain(domain or jd_data.get("domain") or resume_data.get("domain"))
+def analyze_gap(
+    resume_data, jd_data, domain: str | None = None, use_llm_refinement: bool = True
+):
+    resolved_domain = normalize_domain(
+        domain or jd_data.get("domain") or resume_data.get("domain")
+    )
 
     resume_skills = _to_normalized_set(resume_data.get("skills", []))
     resume_tools = _to_normalized_set(resume_data.get("tools", []))
@@ -200,7 +210,9 @@ def analyze_gap(resume_data, jd_data, domain: str | None = None, use_llm_refinem
     partial = _find_partial_matches(core_requirement_pool - set(strong), candidate_pool)
 
     resume_experience_years = float(resume_data.get("experience_years", 0) or 0)
-    experience_required = str(jd_data.get("experience_required", "Not specified") or "Not specified")
+    experience_required = str(
+        jd_data.get("experience_required", "Not specified") or "Not specified"
+    )
     required_years = _extract_required_years(experience_required)
 
     readiness_score = _compute_readiness_score(
@@ -241,9 +253,18 @@ def analyze_gap(resume_data, jd_data, domain: str | None = None, use_llm_refinem
         "strong_skills": final.get("strong_skills", []),
         "partial_match_skills": final.get("partial_match_skills", []),
         "skill_gaps": final.get("skill_gaps", []),
-        "resume_experience_years": float(final.get("resume_experience_years", resume_experience_years) or 0),
-        "experience_required": str(final.get("experience_required", experience_required) or experience_required),
+        "resume_experience_years": float(
+            final.get("resume_experience_years", resume_experience_years) or 0
+        ),
+        "experience_required": str(
+            final.get("experience_required", experience_required) or experience_required
+        ),
         "readiness_score": int(final.get("readiness_score", readiness_score)),
         "matched_competencies": sorted(list(jd_competencies & candidate_pool)),
-        "missing_competencies": sorted(list(_to_normalized_set(jd_data.get("required_competencies", [])) - candidate_pool)),
+        "missing_competencies": sorted(
+            list(
+                _to_normalized_set(jd_data.get("required_competencies", []))
+                - candidate_pool
+            )
+        ),
     }

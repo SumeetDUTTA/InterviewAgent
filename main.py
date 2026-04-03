@@ -1,8 +1,3 @@
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 from fastapi import FastAPI
 from pydantic import BaseModel
 from agents.resume_agent import parse_resume
@@ -26,10 +21,12 @@ class InterviewRequest(BaseModel):
     use_llm_gap_refinement: bool = True
 
 
-@app.post("/generate-plan")
-def generate_plan(request: InterviewRequest):
-
-    requested_domain = normalize_domain(request.domain) if request.domain else infer_domain_from_text(request.jd_text)
+def _build_interview_context(request: InterviewRequest):
+    requested_domain = (
+        normalize_domain(request.domain)
+        if request.domain
+        else infer_domain_from_text(request.jd_text)
+    )
 
     resume_data = parse_resume(request.resume_text, domain=requested_domain)
     jd_data = parse_jd(request.jd_text, domain=requested_domain)
@@ -50,6 +47,15 @@ def generate_plan(request: InterviewRequest):
         competencies=jd_data.get("required_competencies", []),
         partial_skills=gap_data.get("partial_match_skills", []),
         readiness_score=gap_data.get("readiness_score", 0),
+    )
+
+    return requested_domain, resolved_domain, resume_data, jd_data, gap_data, plan
+
+
+@app.post("/generate-plan")
+def generate_plan(request: InterviewRequest):
+    requested_domain, resolved_domain, resume_data, jd_data, gap_data, plan = (
+        _build_interview_context(request)
     )
 
     state = InterviewState(
@@ -79,26 +85,8 @@ def generate_plan(request: InterviewRequest):
 
 @app.post("/start-interview")
 def start_interview(request: InterviewRequest):
-
-    requested_domain = normalize_domain(request.domain) if request.domain else infer_domain_from_text(request.jd_text)
-    resume_data = parse_resume(request.resume_text, domain=requested_domain)
-    jd_data = parse_jd(request.jd_text, domain=requested_domain)
-    resolved_domain = normalize_domain(jd_data.get("domain", requested_domain))
-    gap_data = analyze_gap(
-        resume_data,
-        jd_data,
-        domain=resolved_domain,
-        use_llm_refinement=request.use_llm_gap_refinement,
-    )
-
-    plan = generate_interview_plan(
-        gap_data["strong_skills"],
-        gap_data["skill_gaps"],
-        resume_data.get("experience_years", 0),
-        domain=resolved_domain,
-        competencies=jd_data.get("required_competencies", []),
-        partial_skills=gap_data.get("partial_match_skills", []),
-        readiness_score=gap_data.get("readiness_score", 0),
+    requested_domain, resolved_domain, _resume_data, _jd_data, _gap_data, plan = (
+        _build_interview_context(request)
     )
 
     scores = run_interview(plan)

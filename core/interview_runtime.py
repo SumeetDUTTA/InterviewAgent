@@ -1,8 +1,3 @@
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 from agents.interview_conductor import (
     generate_question,
     analyze_answer,
@@ -22,13 +17,17 @@ def run_interview(plan):
 
     for round_data in plan.get("rounds", []):
 
-        focus_areas = round_data.get("focus_areas") or [round_data.get("type", "General")]
+        focus_areas = round_data.get("focus_areas") or [
+            round_data.get("type", "General")
+        ]
         topic = focus_areas[0] if focus_areas else "general competency"
         round_type = round_data.get("type", "General")
         base_difficulty = plan.get("difficulty", "BEGINNER")
         current_difficulty = base_difficulty
 
-        print(f"\n=== Round: {round_data['type']} | Topic: {topic} | Difficulty: {current_difficulty} ===\n")
+        print(
+            f"\n=== Round: {round_data['type']} | Topic: {topic} | Difficulty: {current_difficulty} ===\n"
+        )
 
         previous_questions = []
 
@@ -78,7 +77,9 @@ def run_interview(plan):
                 round_type=round_type,
                 topic=topic,
                 difficulty=current_difficulty,
-                previous_answers=[s.get("answer", "") for s in all_scores[-5:] if s.get("answer")],
+                previous_answers=[
+                    s.get("answer", "") for s in all_scores[-5:] if s.get("answer")
+                ],
             )
             analysis["topic"] = topic
             analysis["difficulty"] = current_difficulty
@@ -104,7 +105,9 @@ def run_interview(plan):
                     domain=domain,
                     round_type=round_type,
                 )
-                followup_safety = guardrail_question(followup, domain, round_type, topic)
+                followup_safety = guardrail_question(
+                    followup, domain, round_type, topic
+                )
                 followup = followup_safety["safe_question"]
 
                 print("\nAI Follow-up:", followup)
@@ -120,7 +123,9 @@ def run_interview(plan):
                     round_type=round_type,
                     topic=topic,
                     difficulty=current_difficulty,
-                    previous_answers=[s.get("answer", "") for s in all_scores[-5:] if s.get("answer")],
+                    previous_answers=[
+                        s.get("answer", "") for s in all_scores[-5:] if s.get("answer")
+                    ],
                 )
                 analysis["topic"] = topic
                 analysis["difficulty"] = current_difficulty
@@ -130,7 +135,9 @@ def run_interview(plan):
                 analysis["answer_length"] = len(followup_answer.split())
                 analysis["is_followup"] = True
                 analysis["timestamp_utc"] = datetime.utcnow().isoformat() + "Z"
-                analysis["rubric_version"] = analysis.get("rubric_version", RUBRIC_VERSION)
+                analysis["rubric_version"] = analysis.get(
+                    "rubric_version", RUBRIC_VERSION
+                )
                 analysis["safety"] = {
                     "question": followup_safety,
                     "answer": followup_answer_safety,

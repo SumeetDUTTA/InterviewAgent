@@ -43,12 +43,24 @@ class ResumeData(BaseModel):
     summary: str = ""
 
 
+DEBUG_LOGS = os.getenv("INTERVIEW_AGENT_DEBUG", "0") == "1"
+
+
+def _debug_log(
+    *args,
+):
+    if DEBUG_LOGS:
+        print(*args)
+
+
 def _validate_resume_payload(payload: Any) -> dict:
     validated = ResumeData.model_validate(payload)
     return validated.model_dump()
 
 
-def parse_resume(resume_text: str, domain: str = "industry", use_reviewer: bool = False):
+def parse_resume(
+    resume_text: str, domain: str = "industry", use_reviewer: bool = False
+):
     normalized_domain = normalize_domain(domain)
     system_prompt = f"""
     You are an expert Resume Scrutinizer.
@@ -75,7 +87,8 @@ def parse_resume(resume_text: str, domain: str = "industry", use_reviewer: bool 
     - Do not hallucinate information not present in the resume
     - Focus on extracting information relevant to the domain: {normalized_domain}
     """
-    print("Parsed Resume Text:\n", resume_text[:500], "...\n")  # Debug print
+
+    _debug_log("Parsed Resume Text:\n", resume_text[:500], "...\n")  # Debug print
 
     user_prompt = f"Domain: {normalized_domain}\n\nResume:\n{resume_text}"
     response = generate_with_mode(
@@ -87,7 +100,7 @@ def parse_resume(resume_text: str, domain: str = "industry", use_reviewer: bool 
         validator=_validate_resume_payload,
     )
 
-    print("Raw Model Output:\n", response)  # Debug print
+    _debug_log("Raw Model Output:\n", response)  # Debug print
 
     try:
         if isinstance(response, dict) and response.get("error") and response.get("raw"):
@@ -120,7 +133,9 @@ def parse_resume(resume_text: str, domain: str = "industry", use_reviewer: bool 
         }
 
 
-def resume_reviewer_pass(resume_text: str, planner_output: dict, domain: str = "industry"):
+def resume_reviewer_pass(
+    resume_text: str, planner_output: dict, domain: str = "industry"
+):
     normalized_domain = normalize_domain(domain)
     review_prompt = f"""
     You are a strict validation system for resume extraction.

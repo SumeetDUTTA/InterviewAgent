@@ -1,7 +1,7 @@
 import json
 import re
 from typing import List, Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from utils.llm import generate_with_mode
 from core.domain_profiles import get_domain_profile, normalize_domain
 
@@ -20,10 +20,17 @@ def extract_json(text):
 
 
 class InterviewRound(BaseModel):
-    type: Literal["Technical", "Behavioral", "Case Study", "Situational", "Domain-Specific", "Warm-up"]
+    type: Literal[
+        "Technical",
+        "Behavioral",
+        "Case Study",
+        "Situational",
+        "Domain-Specific",
+        "Warm-up",
+    ]
     focus_areas: List[str]
     stress_test_areas: List[str]
-    competencies: List[str] = []
+    competencies: List[str] = Field(default_factory=list)
 
 
 class InterviewPlan(BaseModel):
@@ -62,7 +69,11 @@ def _fallback_interview_plan(
     rounds = [
         InterviewRound(
             type="Warm-up",
-            focus_areas=["Candidate Introduction", "Experience Overview", "Career Aspirations"],
+            focus_areas=[
+                "Candidate Introduction",
+                "Experience Overview",
+                "Career Aspirations",
+            ],
             stress_test_areas=[],
             competencies=[],
         ),
@@ -174,7 +185,13 @@ def generate_interview_plan(
             readiness_score,
         )
 
-    valid_types = {"Technical", "Behavioral", "Case Study", "Situational", "Domain-Specific"}
+    valid_types = {
+        "Technical",
+        "Behavioral",
+        "Case Study",
+        "Situational",
+        "Domain-Specific",
+    }
     rounds_raw = parsed.get("rounds", []) if isinstance(parsed, dict) else []
     validated_rounds = []
     for rnd in rounds_raw:
@@ -186,7 +203,10 @@ def generate_interview_plan(
         validated_rounds.append(
             InterviewRound(
                 type=round_type,
-                focus_areas=_safe_list(rnd.get("focus_areas", []), profile.get("default_focus_areas", ["Core Role Fundamentals"])),
+                focus_areas=_safe_list(
+                    rnd.get("focus_areas", []),
+                    profile.get("default_focus_areas", ["Core Role Fundamentals"]),
+                ),
                 stress_test_areas=_safe_list(rnd.get("stress_test_areas", []), []),
                 competencies=_safe_list(rnd.get("competencies", []), []),
             )
@@ -205,12 +225,18 @@ def generate_interview_plan(
 
     warmup_round = InterviewRound(
         type="Warm-up",
-        focus_areas=["Candidate Introduction", "Experience Overview", "Career Aspirations"],
+        focus_areas=[
+            "Candidate Introduction",
+            "Experience Overview",
+            "Career Aspirations",
+        ],
         stress_test_areas=[],
         competencies=[],
     )
 
-    model_difficulty = str(parsed.get("difficulty", _difficulty_from_readiness(readiness_score))).upper()
+    model_difficulty = str(
+        parsed.get("difficulty", _difficulty_from_readiness(readiness_score))
+    ).upper()
     if model_difficulty not in {"BEGINNER", "INTERMEDIATE", "ADVANCED"}:
         model_difficulty = _difficulty_from_readiness(readiness_score)
 

@@ -19,13 +19,25 @@ class JDRequirements(BaseModel):
     evaluation_focus: List[str] = Field(default_factory=list)
 
 
+DEBUG_LOGS = os.getenv("INTERVIEW_AGENT_DEBUG", "0") == "1"
+
+
+def _debug_log(
+    *args,
+):
+    if DEBUG_LOGS:
+        print(*args)
+
+
 def _validate_jd_payload(payload: Any) -> dict:
     validated = JDRequirements.model_validate(payload)
     return validated.model_dump()
 
 
 def parse_jd(jd_text: str, domain: str | None = None, use_reviewer: bool = False):
-    inferred_domain = normalize_domain(domain) if domain else infer_domain_from_text(jd_text)
+    inferred_domain = (
+        normalize_domain(domain) if domain else infer_domain_from_text(jd_text)
+    )
     system_prompt = f"""
     Extract job description requirements.
     Return JSON only with:
@@ -48,7 +60,7 @@ def parse_jd(jd_text: str, domain: str | None = None, use_reviewer: bool = False
     - Prioritize extracting information relevant to the inferred domain: {inferred_domain}
     """
 
-    print("Parsed JD Text:\n", jd_text[:500], "...\n")  # Debug print
+    _debug_log("Parsed JD Text:\n", jd_text[:500], "...\n")  # Debug print
 
     user_prompt = f"Domain hint: {inferred_domain}\n\nJD:\n{jd_text}"
     response = generate_with_mode(
@@ -60,7 +72,7 @@ def parse_jd(jd_text: str, domain: str | None = None, use_reviewer: bool = False
         validator=_validate_jd_payload,
     )
 
-    print("Raw Model Output:\n", response)  # Debug print
+    _debug_log("Raw Model Output:\n", response)  # Debug print
 
     try:
         raw_domain = None
@@ -148,7 +160,9 @@ def jd_reviewer_pass(jd_text: str, planner_output: dict, domain: str | None = No
 
 
 def robust_parse_jd(jd_text: str, domain: str | None = None):
-    inferred_domain = normalize_domain(domain) if domain else infer_domain_from_text(jd_text)
+    inferred_domain = (
+        normalize_domain(domain) if domain else infer_domain_from_text(jd_text)
+    )
     try:
         planner_output = parse_jd(
             jd_text=jd_text,

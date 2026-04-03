@@ -31,11 +31,15 @@ def _sanitize_answer_text(answer: str) -> str:
         r"\bcandidate\s*:",
     ]
 
-    if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in transcript_markers):
+    if any(
+        re.search(pattern, text, flags=re.IGNORECASE) for pattern in transcript_markers
+    ):
         copilot_splits = re.split(r"(?i)\bgithub\s*copilot\s*:", text)
         if len(copilot_splits) > 1:
             text = copilot_splits[-1].strip()
-        text = re.sub(r"(?im)^\s*(user|candidate|ai question|ai follow-up)\s*:\s*", "", text)
+        text = re.sub(
+            r"(?im)^\s*(user|candidate|ai question|ai follow-up)\s*:\s*", "", text
+        )
 
     text = re.sub(r"```[\s\S]*?```", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
@@ -64,7 +68,10 @@ def _contains_security_red_flags(answer: str) -> bool:
         r"\bstore\b.{0,30}\b(password|credentials?|api key|token|secret)\b.{0,30}\b(plain\s*text|openly|unencrypted)\b",
         r"\bhardcod(e|ing)\b.{0,25}\b(password|credentials?|api key|token|secret)\b",
     ]
-    return any(re.search(pattern, text, flags=re.IGNORECASE | re.DOTALL) for pattern in patterns)
+    return any(
+        re.search(pattern, text, flags=re.IGNORECASE | re.DOTALL)
+        for pattern in patterns
+    )
 
 
 def _has_concrete_evidence(answer: str) -> bool:
@@ -98,9 +105,8 @@ def _vagueness_signals(answer: str) -> dict:
     vague_hits = sum(1 for phrase in vague_phrases if phrase in normalized)
     has_concrete = _has_concrete_evidence(answer)
 
-    is_vague = (
-        (word_count < 45 and vague_hits >= 1 and not has_concrete)
-        or (word_count >= 45 and vague_hits >= 3 and not has_concrete)
+    is_vague = (word_count < 45 and vague_hits >= 1 and not has_concrete) or (
+        word_count >= 45 and vague_hits >= 3 and not has_concrete
     )
 
     return {
@@ -138,16 +144,24 @@ def _followup_depth_threshold(difficulty: str, round_type: str) -> int:
     return max(1, min(5, base))
 
 
-def _should_force_depth_followup(vagueness: dict, question: str, round_type: str, difficulty: str, evaluation: dict) -> bool:
+def _should_force_depth_followup(
+    vagueness: dict, question: str, round_type: str, difficulty: str, evaluation: dict
+) -> bool:
     if round_type == "Warm-up":
         return False
 
     depth_threshold = _followup_depth_threshold(difficulty, round_type)
     depth_score = int(evaluation.get("depth", 3))
 
-    lacks_concrete = _question_needs_concrete_example(question) and not vagueness["has_concrete"]
+    lacks_concrete = (
+        _question_needs_concrete_example(question) and not vagueness["has_concrete"]
+    )
     strong_vagueness = vagueness["is_vague"] and vagueness["vague_hits"] >= 2
-    return strong_vagueness or (lacks_concrete and depth_score < min(5, depth_threshold + 1)) or (vagueness["is_vague"] and depth_score < depth_threshold)
+    return (
+        strong_vagueness
+        or (lacks_concrete and depth_score < min(5, depth_threshold + 1))
+        or (vagueness["is_vague"] and depth_score < depth_threshold)
+    )
 
 
 def _jaccard_similarity(a: str, b: str) -> float:
@@ -210,7 +224,9 @@ def _is_generic_question(question: str, topic: str) -> bool:
     return any(pattern in q for pattern in generic_patterns)
 
 
-def _is_repetitive_question(question: str, previous_questions: List[str], threshold: float = 0.72) -> bool:
+def _is_repetitive_question(
+    question: str, previous_questions: List[str], threshold: float = 0.72
+) -> bool:
     for previous in previous_questions:
         if _jaccard_similarity(question, previous) >= threshold:
             return True
@@ -274,7 +290,9 @@ def generate_question(
     ]
 
     if is_warmup:
-        fallback = warmup_questions[min(len(previous_questions), len(warmup_questions) - 1)]
+        fallback = warmup_questions[
+            min(len(previous_questions), len(warmup_questions) - 1)
+        ]
         system_prompt = f"""
         You are a professional interviewer.
         Domain: {resolved_domain}
@@ -355,7 +373,7 @@ Answer: {scoring_answer}
 Domain: {resolved_domain}
 Round type: {round_type}
 """
-    
+
     print("Analyzing answer with:")
     print("Question:", question)
     print("Answer:", scoring_answer)
@@ -368,7 +386,9 @@ Round type: {round_type}
 
     try:
         parsed = response if isinstance(response, dict) else json.loads(response)
-        parsed = apply_rubric_post_rules(parsed, scoring_answer, domain=resolved_domain, round_type=round_type)
+        parsed = apply_rubric_post_rules(
+            parsed, scoring_answer, domain=resolved_domain, round_type=round_type
+        )
 
         heuristics = _heuristic_scores(scoring_answer)
         blended = _merge_scores(parsed, heuristics)
@@ -376,7 +396,10 @@ Round type: {round_type}
 
         normalized_previous = [_sanitize_answer_text(a) for a in previous_answers[-3:]]
         for previous_answer in normalized_previous:
-            if previous_answer and _jaccard_similarity(scoring_answer, previous_answer) >= 0.82:
+            if (
+                previous_answer
+                and _jaccard_similarity(scoring_answer, previous_answer) >= 0.82
+            ):
                 parsed["depth"] = _clamp5(parsed.get("depth", 3) - 1)
                 parsed["clarity"] = _clamp5(parsed.get("clarity", 3) - 1)
                 parsed["confidence"] = _clamp5(parsed.get("confidence", 3) - 1)
@@ -397,7 +420,9 @@ Round type: {round_type}
             if difficulty == "ADVANCED":
                 parsed["confidence"] = _clamp5(parsed.get("confidence", 3) - 1)
 
-        if _should_force_depth_followup(vagueness, question, round_type, difficulty, parsed):
+        if _should_force_depth_followup(
+            vagueness, question, round_type, difficulty, parsed
+        ):
             parsed["needs_followup"] = True
             parsed["followup_type"] = "depth_probe"
 
@@ -408,9 +433,13 @@ Round type: {round_type}
             parsed["needs_followup"] = True
             parsed["followup_type"] = "clarification"
 
-        if any(parsed.get(metric, 5) <= 2 for metric in ["depth", "clarity", "confidence"]):
+        if any(
+            parsed.get(metric, 5) <= 2 for metric in ["depth", "clarity", "confidence"]
+        ):
             parsed["needs_followup"] = True
-            parsed["followup_type"] = "depth_probe" if parsed.get("depth", 3) <= 2 else "clarification"
+            parsed["followup_type"] = (
+                "depth_probe" if parsed.get("depth", 3) <= 2 else "clarification"
+            )
 
         parsed["domain"] = resolved_domain
         parsed["round_type"] = round_type
@@ -461,5 +490,8 @@ Candidate answer: {_sanitize_answer_text(answer)}
         "clarification": "Can you answer directly in your own words without quoting external text?",
         "tradeoff": "What trade-offs did you consider, and why did you choose that approach?",
     }
-    fallback = fallback_map.get(followup_type, "Can you answer the previous question with one concrete example from your experience?")
+    fallback = fallback_map.get(
+        followup_type,
+        "Can you answer the previous question with one concrete example from your experience?",
+    )
     return _extract_single_question(response, fallback)

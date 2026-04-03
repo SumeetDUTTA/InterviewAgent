@@ -91,7 +91,9 @@ Return corrected JSON only.
     return extract_json(repaired_text)
 
 
-def _is_valid_with_validator(candidate: Any, validator: Callable[[Any], Any] | None) -> tuple[bool, Any]:
+def _is_valid_with_validator(
+    candidate: Any, validator: Callable[[Any], Any] | None
+) -> tuple[bool, Any]:
     if validator is None:
         return True, candidate
     try:

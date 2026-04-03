@@ -125,7 +125,9 @@ def _clamp_score(value) -> int:
     return max(1, min(5, value))
 
 
-def apply_rubric_post_rules(parsed: dict, answer: str, domain: str, round_type: str) -> dict:
+def apply_rubric_post_rules(
+    parsed: dict, answer: str, domain: str, round_type: str
+) -> dict:
     rubric = get_rubric(domain, round_type)
     threshold = rubric.get("followup_threshold", 2)
 

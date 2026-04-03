@@ -1,5 +1,11 @@
+import os
 import PyPDF2
 
+DEBUG_LOGS = os.getenv('INTERVIEW_AGENT_DEBUG', "0") == "1"
+
+def _debug_log(*args,):
+    if DEBUG_LOGS:
+        print(*args)
 
 def load_text_file(path):
     with open(path, "r", encoding="utf-8") as f:
@@ -7,13 +13,13 @@ def load_text_file(path):
 
 
 def load_pdf_file(path):
-    text = ""
+    chunks = []
     with open(path, "rb") as f:
         reader = PyPDF2.PdfReader(f)
         for page in reader.pages:
-            text += page.extract_text()
-            print("Extracted Page Text:\n", text[:500], "...\n")  # Debug print
-    return text
+            chunks.append(page.extract_text() or "")
+            _debug_log("Extracted Page Text:\n", chunks[-1][:500], "...\n")  # Debug print
+    return "\n".join(chunks)
 
 
 def load_resume(path):
